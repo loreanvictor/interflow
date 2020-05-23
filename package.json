@@ -1,0 +1,27 @@
+{
+  "name": "interflow",
+  "version": "0.0.1",
+  "description": "Experimental flow-graph interleave parser/transpiler",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node samples",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loreanvictor/interflow.git"
+  },
+  "author": "Eugene Ghanizadeh Khoub <ghanizadeh.eugene@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/loreanvictor/interflow/issues"
+  },
+  "homepage": "https://github.com/loreanvictor/interflow#readme",
+  "devDependencies": {
+    "ts-node": "^8.10.1",
+    "typescript": "^3.9.3"
+  },
+  "dependencies": {
+    "rxjs": "^6.5.5"
+  }
+}
