@@ -13,6 +13,7 @@ export class Refs {
     if (ref[0] === '@') {
       ref = ref.substr(1);
       if (ref in this.map) return this.map[ref];
+      else throw Error('Not Found Var!'); // TODO: better error
     }
     return undefined;
   }

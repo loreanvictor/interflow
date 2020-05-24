@@ -60,6 +60,10 @@ export function parse(
       return state.handle(cursor);
     },
     err => observer.error(err),
-    () => observer.complete());
+    () => {
+      if (inner) delegate.complete();
+
+      observer.complete();
+    });
   });
 }

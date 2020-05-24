@@ -33,7 +33,7 @@ export function scan(code: string) {
       observer.next({
         pos, prev, current, next,
         nextSpan: current + (next || ''),
-        prevSpan: (prev || '') + prev,
+        prevSpan: (prev || '') + current,
         skip: () => i++,
       });
     }

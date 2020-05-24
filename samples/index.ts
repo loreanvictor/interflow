@@ -3,15 +3,9 @@ import { last } from 'rxjs/operators';
 import { parse } from '../src';
 
 
-const code = `
-# a = h;
+const code = 'a -> `b ${`,`} c` -> d';
 
 
-@a -> b -> c;
-d, @a -> e;
-f -> g -> @a;
-`
-
-parse(code).pipe(last()).subscribe(node => {
-  console.log(node.out);
+parse(code).subscribe(node => {
+  console.log(node.code);
 });

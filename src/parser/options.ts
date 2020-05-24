@@ -6,6 +6,8 @@ export interface Options {
   stackMap: {[init: string]: string};
   commentMap: {[init: string]: string};
   strMarks: string[];
+  strTemplates: {[init: string]: string[]};
+  templateMap: {[init: string]: string};
   prep: PrepFunc[];
   refs?: Refs;
 }
@@ -24,6 +26,14 @@ export const DefaultOptions: Options = {
   },
   
   strMarks: ['"', '`', "'"],
+
+  strTemplates: {
+    '`': ['${']
+  },
+
+  templateMap: {
+    '${': '}'
+  },
 
   prep: [ dropEmpty, trimCode ]
 }

@@ -6,10 +6,13 @@ import { Refs } from './refs';
 import { prep } from './prep';
 
 
+enum StackType {
+  Normal, Str, Template,
+}
+
 export class State {
   commentMark: string | undefined = undefined;
-  strMark: string | undefined = undefined;
-  stack: string[] = [];
+  stack: {mark: string, type: StackType}[] = [];
 
   working: Node[] = [];
 
@@ -21,11 +24,17 @@ export class State {
   }
 
   checkStr(cursor: Cursor) {
-    if (this.options.strMarks.includes(cursor.current)) this.strMark = cursor.current;
+    if (this.options.strMarks.includes(cursor.current)) this.stack.push({ mark: cursor.current, type: StackType.Str});
   }
 
   checkStack(cursor: Cursor) {
-    if (cursor.current in this.options.stackMap) this.stack.push(cursor.current);
+    if (cursor.current in this.options.stackMap) this.stack.push({ mark: cursor.current, type: StackType.Normal });
+  }
+
+  checkTemplate(cursor: Cursor) {
+    const initializers = this.options.strTemplates[this.peek?.mark];
+    if (initializers.includes(cursor.current)) this.stack.push({ mark: cursor.current, type: StackType.Template });
+    if (initializers.includes(cursor.prevSpan)) this.stack.push({ mark: cursor.prevSpan, type: StackType.Template });
   }
 
   append(cursor: Cursor) {
@@ -33,16 +42,22 @@ export class State {
     this.working[this.working.length - 1].code += cursor.current;
   }
 
+  get peek() { return this.stack[this.stack.length - 1]; }
+
   public handle(cursor: Cursor) {
     this.append(cursor);
     if (this.commentMark) {
       if (cursor.current === this.options.commentMap[this.commentMark] ||
         (cursor.prevSpan === this.options.commentMap[this.commentMark])) this.commentMark = undefined;
-    } else if (this.strMark) {
-      if (cursor.current === this.strMark && cursor.prev !== '\\') this.strMark = undefined;
+    } else if (this.peek?.type === StackType.Str) {
+      if (cursor.current === this.peek?.mark && cursor.prev !== '\\') this.stack.pop();
+      else this.checkTemplate(cursor);
     } else {
-      if (this.stack.length > 0) {
-        if (cursor.current === this.options.stackMap[this.stack[this.stack.length - 1]]) 
+      if (this.peek?.type === StackType.Normal) {
+        if (cursor.current === this.options.stackMap[this.peek.mark])
+          this.stack.pop();
+      } else if (this.peek?.type === StackType.Template) {
+        if (cursor.current === this.options.templateMap[this.peek.mark])
           this.stack.pop();
       }
 
@@ -52,7 +67,7 @@ export class State {
     }
   }
 
-  public top() { return !this.commentMark && !this.strMark && this.stack.length === 0; }
+  public top() { return !this.commentMark && this.stack.length === 0; }
 
   public resetWorking() { this.working = []; }
   public addWorkingNode() { this.working.push({code: '', in: [], out: []}); }
