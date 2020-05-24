@@ -1,11 +1,13 @@
-import { PreWire, dropEmpty, trimCode } from './wire';
+import { PrepFunc, dropEmpty, trimCode } from './prep';
+import { Refs } from './refs';
 
 
 export interface Options {
   stackMap: {[init: string]: string};
   commentMap: {[init: string]: string};
   strMarks: string[];
-  preWire: PreWire[];
+  prep: PrepFunc[];
+  refs?: Refs;
 }
 
 
@@ -23,5 +25,5 @@ export const DefaultOptions: Options = {
   
   strMarks: ['"', '`', "'"],
 
-  preWire: [ dropEmpty, trimCode ]
+  prep: [ dropEmpty, trimCode ]
 }

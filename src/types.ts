@@ -1,5 +1,6 @@
 export interface Node {
   code: string;
+  ref?: string;
   in: Node[];
   out: Node[];
 }
@@ -13,9 +14,10 @@ export function isNode(n: any): n is Node {
 export interface Flow {
   sources: Node[];
   sinks: Node[];
+  nodes: [];
 }
 
 
-export function isFlow(g: any): g is Flow {
-  return g && Array.isArray(g.sources) && Array.isArray(g.sinks);
+export function isFlow(f: any): f is Flow {
+  return f && Array.isArray(f.sources) && Array.isArray(f.sinks) && Array.isArray(f.nodes);
 }

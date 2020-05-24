@@ -2,6 +2,8 @@ import { Node } from '../types';
 
 import { Options } from './options';
 import { Cursor } from './scan';
+import { Refs } from './refs';
+import { prep } from './prep';
 
 
 export class State {
@@ -31,7 +33,7 @@ export class State {
     this.working[this.working.length - 1].code += cursor.current;
   }
 
-  handle(cursor: Cursor) {
+  public handle(cursor: Cursor) {
     this.append(cursor);
     if (this.commentMark) {
       if (cursor.current === this.options.commentMap[this.commentMark] ||
@@ -50,11 +52,18 @@ export class State {
     }
   }
 
-  resetWorking() { this.working = []; }
-  addWorkingNode() { this.working.push({code: '', in: [], out: []}); }
-  top() { return !this.commentMark && !this.strMark && this.stack.length === 0; }
+  public top() { return !this.commentMark && !this.strMark && this.stack.length === 0; }
 
-  finalize() {
+  public resetWorking() { this.working = []; }
+  public addWorkingNode() { this.working.push({code: '', in: [], out: []}); }
+  public prepWorking() { this.working = prep(this.working, this.options.prep); }
+  public resolveWorkingNode(refs: Refs) {
+    if (this.working.length === 0) return;
+    const res = refs.resolve(this.working[this.working.length - 1].code.trim());
+    if (res) this.working[this.working.length - 1] = res;
+  }
+
+  public finalize() {
     // TODO: check if state can be closed
   }
 }

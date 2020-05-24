@@ -1,56 +1,65 @@
-import { Observable } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
 
-import { Node, Flow } from '../types';
+import { Node } from '../types';
 import { Cursor, scan } from './scan';
-import { Options, DefaultOptions } from './options';
-import { wire, applyPre } from './wire';
 import { State } from './state';
+import { connect } from './connect';
+import { Options, DefaultOptions } from './options';
+import { Refs } from './refs';
+import { define } from './define';
 
+
+export function parse(source: string, options?: Options): Observable<Node>;
+export function parse(source: Observable<Cursor>, options?: Options): Observable<Node>;
+export function parse(options: Options): (o: Observable<Cursor>) => Observable<Node>;
 
 export function parse(
-  source: string | Observable<Cursor>,
-  options: Options = DefaultOptions
-): Observable<Flow> {
+  source: string | Options | Observable<Cursor>,
+  options: Options = DefaultOptions,
+): Observable<Node> | ((o: Observable<Cursor>) => Observable<Node>) {
   if (typeof source === 'string') return parse(scan(source), options);
+  if (!(source instanceof Observable)) return (obs: Observable<Cursor>) => parse(obs, source);
 
-  return new Observable<Flow>(observer => {
+  return new Observable<Node>(observer => {
+    const opts = { ...options, refs: options.refs || new Refs() };
+
     const state = new State(options);
-    let last: Node[] = [];
-    let first: Node[] = [];
+
+    let delegate = new Subject<Cursor>();
+    let inner: Subscription | undefined;
 
     return source.subscribe(cursor => {
-      if (state.top()) {
-        if (cursor.current === ',') {
-          return state.addWorkingNode();
-        } else if (cursor.nextSpan === '->') {
-          if (state.working.length === 0) throw Error('syntax error!'); //TODO: replace with proper error
+      if (state.top() && cursor.current === ';') {
+        if (!inner) throw Error('WAAAA?');  // TODO: proper error
 
-          cursor.skip();
+        delegate.complete();
+        inner.unsubscribe();
+        inner = undefined;
+        delegate = new Subject<Cursor>();
 
-          if (last.length > 0) wire(last, state.working, options.preWire);
-          else first = applyPre(state.working, options.preWire);
+        return;
+      }
 
-          last = state.working;
-          return state.resetWorking();
+      if (!inner) {
+        if (/\s/.test(cursor.current)) return;
+        if (cursor.current === '#') {
+          inner = define(delegate, opts.refs).subscribe(
+            node => observer.next(node),
+            err => observer.error(err),
+          );
+          return;
+        } else {
+          inner = connect(delegate, opts).subscribe(
+            node => observer.next(node),
+            err => observer.error(err),
+          );
         }
       }
 
+      delegate.next(cursor);
       return state.handle(cursor);
     },
     err => observer.error(err),
-    () => {
-      if (state.working.length === 0 || last.length === 0)
-        throw Error('Syntax Error!'); //TODO: replace with proper error
-
-      state.finalize();
-      wire(last, state.working);
-
-      observer.next({
-        sources: first,
-        sinks: state.working
-      });
-
-      observer.complete();
-    });
+    () => observer.complete());
   });
 }

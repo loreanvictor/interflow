@@ -1,20 +1,17 @@
-import { parse } from '../src/parser/parse';
+import { last } from 'rxjs/operators';
+
+import { parse } from '../src';
 
 
 const code = `
-router.get('/endpoint') 
--> timeout(1000)
-->
-  filter(({req}) => req.query.key === ALICE_KEY),
-  filter(({req}) => req.query.key === BOB_KEY),
--> zip
--> tap(([alice, bob]) => {
-  alice.res.send('You guys made it!');
-  bob.res.send('You guys made it!');
-})
--> retry()
+# a = h;
+
+
+@a -> b -> c;
+d, @a -> e;
+f -> g -> @a;
 `
 
-parse(code).subscribe(flow => {
-  console.log(flow.sources[0].out[0]);
+parse(code).pipe(last()).subscribe(node => {
+  console.log(node.out);
 });
